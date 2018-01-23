@@ -18,7 +18,7 @@ activity_data <- filter(activity_data, steps != "NA")
 ## What is mean total number of steps taken per day?
 
 
-#### Total steps per day
+##### Total steps per day
 
 ```{r echo=TRUE}
 
@@ -30,7 +30,7 @@ hist(as.numeric(total_steps_day$total_steps),  col="green", xlab = "Date", main 
 
 ```
 
-#### Average and Median steps per day summarized in the table below
+##### Average and Median steps per day summarized in the table below
 
 ```{r echo=TRUE}
 print(total_steps_day %>%
@@ -42,10 +42,75 @@ print(total_steps_day %>%
 
 ## What is the average daily activity pattern?
 
+Compute the average number of steps per time interval
+
+```{r echo=TRUE}
+average_steps_interval <- activity_data %>%
+    group_by(interval) %>%
+    summarise(avg_interval_steps = mean(steps) )
+```
 
 
+
+Time series plot of the interval and the average number of steps taken across all days
+
+```{r echo=TRUE}
+with(average_steps_interval, plot(x=interval, y=avg_interval_steps, type = "l", xlab = "5 min interval", ylab = "Average Steps Taken"))
+```
+
+
+The 5-minute interval with the highest average number of steps accross all days
+
+```{r echo=TRUE}
+print(average_steps_interval %>%
+      summarise(max_step_interval = max(avg_interval_steps))
+      )
+```
+      
 ## Imputing missing values
 
+This time get all data, not just non-NA
+```{r echo=TRUE}
+activity_data_full <- read.csv("activity.csv", stringsAsFactors = F)
+```
+
+
+Cursor through each row in the data frame; if the steps are NA in that row, find the corresponding interval step average
+computed in average_steps_interval data frame and replace the NA with that interval average
+```{r echo=TRUE}
+ for(i in 1:nrow(activity_data_full)) {
+
+      if(is.na(activity_data_full[i,1])) {
+          activity_row <- filter(average_steps_interval, interval == activity_data_full[i,3])
+          activity_data_full[[i,1]] =  activity_row[[1,2]]
+      }
+ }
+```
+
+# Total steps per day
+
+```{r echo=TRUE}
+total_steps_day <- activity_data_full %>% 
+  group_by(date) %>%
+  summarise(total_steps = sum(steps) )
+```
+
+# Average and Median steps per day
+
+```{r echo=TRUE}
+print(total_steps_day %>%
+        summarise(avg_steps = mean(total_steps), median_step = median(total_steps) )
+)
+```
+
+#Histogram of Total steps per day
+```{r echo=TRUE}
+hist(as.numeric(total_steps_day$total_steps),  col="green", xlab = "Date", main = "Total Steps per Day")
+```
+
+
+As one might expect, if one replaces NA values with the interval step average the variance/standard deviation decreases
+(i.e. the "bell curve" becomes more narrow)
 
 
 ## Are there differences in activity patterns between weekdays and weekends?
